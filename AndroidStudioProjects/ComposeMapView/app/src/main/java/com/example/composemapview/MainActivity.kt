@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
                                 Text("View")
                             }
                         }
-                        MapComposable(geoPoint)
+                        MapComposable(modifier, geoPoint)
                     }
                 }
             }
@@ -65,8 +65,8 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MapComposable(geoPoint : GeoPoint) {
-    Column(modifier = Modifier.padding(top = 20.dp).fillMaxWidth()) {
+fun MapComposable(modifier: Modifier, geoPoint : GeoPoint) {
+    Column(modifier = /*padding(top = 20.dp).fillMaxWidth()*/modifier) {
         AndroidView(factory = { ctx ->
             Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx))
 

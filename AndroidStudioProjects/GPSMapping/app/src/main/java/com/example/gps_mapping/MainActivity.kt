@@ -22,12 +22,17 @@ import android.location.LocationManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat.getSystemService
 import java.security.Provider
 
+data class LatLon(var lat: Double, var lon: Double)
 class MainActivity : ComponentActivity(), LocationListener {
 
-    val viewModel : GpsVieModel by viewModels()
+    val latLonViewModel : GpsViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,28 +43,32 @@ class MainActivity : ComponentActivity(), LocationListener {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    var latLon: LatLon by remember { mutableStateOf(LatLon(51.05, -0.72)) }
 
+                    latLonViewModel.latLonLiveData.observe(this) { latLon = it } // "it" is the LatLon being observed and used to update user's location to the UI
+                    Text("Latitude: ${latLon.lat}, Longitude: ${latLon.lon}")
                 }
             }
         }
+        checkPermissions()
     }
 
     fun checkPermissions() {
         val requiredPermission = Manifest.permission.ACCESS_FINE_LOCATION
 
         if(checkSelfPermission(requiredPermission) == PackageManager.PERMISSION_GRANTED) {
-            startGPS()
+            startGPS() // function that starts the GPS after user's permission has been granted.
         } else {
             // doSomethingElse()
-            val seekPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {isGranted ->
+            val seekPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted -> // dialogue box that returns a lambda function after user's interaction
                 if(isGranted) {
-                    startGPS()
+                    startGPS() // function that starts the GPS after user's permission has been granted.
                 } else {
                     // User did not grant GPS permission
-                    Toast.makeText(this, "Location Permission denied", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Location Permission Denied!", Toast.LENGTH_LONG).show() // the Toast function produces a pop up box in the UI for a brief moment.
                 }
             }
-            seekPermission.launch(requiredPermission)
+            seekPermission.launch(requiredPermission) // launches the permission request Launcher: this applies when it's the user's first time using the App or the user previously denied the GPS permission
         }
     }
 
@@ -70,18 +79,20 @@ class MainActivity : ComponentActivity(), LocationListener {
     }
 
     override fun onLocationChanged(location: Location) {
-        Toast.makeText(this, "Latitude: ${location.latitude}, Longitude: ${location.longitude}", Toast.LENGTH_LONG).show()
+        latLonViewModel.latLon = LatLon(location.latitude, location.longitude)
+        Toast.makeText(this, "Latitude: ${location.latitude}, Longitude: ${location.longitude}", Toast.LENGTH_LONG).show() // this displays the new/current GPS location of the user using a Toast pop up
     }
 
     override fun onProviderEnabled(provider: String) {
-        Toast.makeText(this, "GPS enabled", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "GPS enabled", Toast.LENGTH_LONG).show() // handles the situation of a user turning the GPS on
     }
 
     override fun onProviderDisabled(provider: String) {
-        Toast.makeText(this, "GPS disabled", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "GPS disabled", Toast.LENGTH_LONG).show() // handles the situation of a user turning the GPS off
     }
 
-    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) { // this function is outdated for API 29(Android 10) and above hence, it will be ignored. Nonetheless, it is required even though it does
+                                                                                    // nothing because when excluded the application crashes on device API lower than 29 (Android 9 or older).
         // doNothing
     }
 }

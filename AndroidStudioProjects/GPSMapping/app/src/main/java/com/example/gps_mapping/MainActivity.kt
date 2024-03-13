@@ -19,14 +19,23 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.preference.PreferenceManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat.getSystemService
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 import java.security.Provider
 
 data class LatLon(var lat: Double, var lon: Double)
@@ -46,7 +55,15 @@ class MainActivity : ComponentActivity(), LocationListener {
                     var latLon: LatLon by remember { mutableStateOf(LatLon(51.05, -0.72)) }
 
                     latLonViewModel.latLonLiveData.observe(this) { latLon = it } // "it" is the LatLon being observed and used to update user's location to the UI
-                    Text("Latitude: ${latLon.lat}, Longitude: ${latLon.lon}")
+                    Column {
+                        Row {
+                            Text("Latitude: ${latLon.lat}, Longitude: ${latLon.lon}")
+                        }
+                        Column {
+                            MapComposable(GeoPoint(latLon.lat, latLon.lon))
+                        }
+                    }
+
                 }
             }
         }
@@ -95,4 +112,25 @@ class MainActivity : ComponentActivity(), LocationListener {
                                                                                     // nothing because when excluded the application crashes on device API lower than 29 (Android 9 or older).
         // doNothing
     }
+}
+
+@Composable
+fun MapComposable(geoPoint: GeoPoint) {
+    AndroidView(factory = { ctx  -> Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx))
+
+        val map1 = MapView(ctx).apply {
+            setMultiTouchControls(true)
+            setTileSource(TileSourceFactory.MAPNIK)
+            controller.setZoom(14.0)
+        }
+        val marker = Marker(map1)
+        marker.apply {
+            position = GeoPoint(51.05, -0.72)
+            title = "Fernhurst, village in West Sussex"
+        }
+        map1.overlays.add(marker)
+        map1
+    },
+    update = { view -> view.controller.setCenter(geoPoint)}
+    )
 }

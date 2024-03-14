@@ -34,6 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import com.example.composemapview.ui.theme.ComposeMapViewTheme
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -47,26 +48,20 @@ class MainActivity : ComponentActivity() {
             ComposeMapViewTheme {
                 // A surface container using the 'background' color from the theme
                 Surface {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        var lat by remember { mutableStateOf("") }
-                        var lng by remember { mutableStateOf("") }
-                        var geoPoint by remember { mutableStateOf(GeoPoint(0.0, 0.0)) }
+                    var lat by remember { mutableStateOf("") }
+                    var lng by remember { mutableStateOf("") }
+                    var geoPoint by remember { mutableStateOf(GeoPoint(0.0, 0.0)) }
 
-                        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                            val screenHeightInDp = getScreenHeightInDp(this@MainActivity)
-                            val mapHeight = screenHeightInDp - 80 // Subtracting the height of the controls row
-                            MapComposable(geoPoint, mapHeight.dp)
+                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                        val mapHeight = this.maxHeight - 80.dp // Subtracting the height of the controls row
 
-                            Row(
-                                modifier = Modifier
-                                    .height(80.dp)
-                                    .fillMaxWidth()
-                            ) {
-                                TextField(value = lat, onValueChange = {lat=it}, label = {Text("Latitude")}, modifier = Modifier.weight(1.0f))
-                                TextField(value = lng, onValueChange = {lng=it}, label = {Text("Longitude")}, modifier = Modifier.weight(1.0f))
-                                Button(onClick = { geoPoint = GeoPoint(lat.toDouble(), lng.toDouble()) }) {
-                                    Text("View")
-                                }
+                        MapComposable(geoPoint, mapHeight)
+
+                        Row(modifier = Modifier.height(80.dp).align(Alignment.BottomCenter)) {
+                            TextField(value = lat, onValueChange = {lat=it}, label = {Text("Latitude")}, modifier = Modifier.weight(1.0f).zIndex(2.0f))
+                            TextField(value = lng, onValueChange = {lng=it}, label = {Text("Longitude")}, modifier = Modifier.weight(1.0f).zIndex(2.0f))
+                            Button(onClick = { geoPoint = GeoPoint(lat.toDouble(), lng.toDouble()) }) {
+                                Text("View")
                             }
                         }
                     }
@@ -76,29 +71,22 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-fun getScreenHeightInDp(context: Context): Int {
-    val displayMetrics = DisplayMetrics()
-    val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-    windowManager.defaultDisplay.getMetrics(displayMetrics)
-
-    val density = context.resources.displayMetrics.density
-    return (displayMetrics.heightPixels / density).toInt()
-}
-
 @Composable
 fun MapComposable( geoPoint: GeoPoint, mapHeight: Dp) {
-    AndroidView(factory = { ctx ->
-        Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx))
+    Column(modifier = Modifier.height(mapHeight)) {
+        AndroidView(factory = { ctx ->
+            Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx))
 
-        MapView(ctx).apply {
-            setClickable(true)
-            setMultiTouchControls(true)
-            setTileSource(TileSourceFactory.MAPNIK)
-            controller.setZoom(10.0)
-        }
-    },
-        update = { view -> view.controller.setCenter(geoPoint) }
-    )
+            MapView(ctx).apply {
+                setClickable(true)
+                setMultiTouchControls(true)
+                setTileSource(TileSourceFactory.MAPNIK)
+                controller.setZoom(10.0)
+            }
+        },
+            update = { view -> view.controller.setCenter(geoPoint) }
+        )
+    }
 }
 
 @Preview(showBackground = true)

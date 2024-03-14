@@ -22,11 +22,15 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Button
+import androidx.compose.material3.Switch
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -54,25 +58,14 @@ class MainActivity : ComponentActivity(), LocationListener {
 
                     NavHost(navController=navController, startDestination="homeScreen") {
                         composable("homeScreen") {
-                            // HomeScreenComposable()
+                            HomeScreenComposable(settingsMenu ={
+                                navController.navigate("settingsScreen")
+                            })
                         }
                         composable("settingsScreen") {
-                            // SettingsComposable()
+                            SettingsComposable({ lat, lon, openTopo -> })
                         }
                     }
-
-                    var latLon: LatLon by remember { mutableStateOf(LatLon(51.05, -0.72)) }
-
-                    latLonViewModel.latLonLiveData.observe(this) { latLon = it } // "it" is the LatLon being observed and used to update user's location to the UI
-                    Column {
-                        Row {
-                            Text("Latitude: ${latLon.lat}, Longitude: ${latLon.lon}")
-                        }
-                        Column {
-                            MapComposable(GeoPoint(latLon.lat, latLon.lon))
-                        }
-                    }
-
                 }
             }
         }
@@ -121,6 +114,22 @@ class MainActivity : ComponentActivity(), LocationListener {
                                                                                     // nothing because when excluded the application crashes on device API lower than 29 (Android 9 or older).
         // doNothing
     }
+
+    @Composable
+    fun HomeScreenComposable(settingsMenu: () -> Unit) {
+
+        var latLon: LatLon by remember { mutableStateOf(LatLon(51.05, -0.72)) }
+
+        latLonViewModel.latLonLiveData.observe(this) { latLon = it } // "it" is the LatLon being observed and used to update user's location to the UI
+        Column {
+            Row(modifier = Modifier.zIndex(2.0f)) {
+                Text("Latitude: ${latLon.lat}, Longitude: ${latLon.lon}")
+            }
+            Button(modifier = Modifier.zIndex(2.0f), onClick ={ settingsMenu() }) { Text("SETTINGS") }
+
+            MapComposable(GeoPoint(latLon.lat, latLon.lon))
+        }
+    }
 }
 
 @Composable
@@ -142,4 +151,20 @@ fun MapComposable(geoPoint: GeoPoint) {
     },
     update = { view -> view.controller.setCenter(geoPoint)}
     )
+}
+
+@Composable
+fun SettingsComposable(onSettingsUpdated: (Double, Double, Boolean) -> Unit) {
+    Column {
+        var lat by remember { mutableStateOf("") }
+        var lon by remember { mutableStateOf("") }
+
+        TextField(value = lat, onValueChange = {lat=it} )
+        TextField(value = lon, onValueChange = {lon=it} )
+
+        var openTopo by remember { mutableStateOf(false) }
+        Switch(checked = openTopo, onCheckedChange = { openTopo=it})
+        
+        Button(onClick = {onSettingsUpdated(lat.toDouble(), lon.toDouble(), openTopo)}) { Text("Update") }
+    }
 }

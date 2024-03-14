@@ -32,6 +32,9 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 
 data class LatLon(var lat: Double, var lon: Double)
 class MainActivity : ComponentActivity(), LocationListener {
@@ -47,6 +50,17 @@ class MainActivity : ComponentActivity(), LocationListener {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    val navController = rememberNavController()
+
+                    NavHost(navController=navController, startDestination="homeScreen") {
+                        composable("homeScreen") {
+                            // HomeScreenComposable()
+                        }
+                        composable("settingsScreen") {
+                            // SettingsComposable()
+                        }
+                    }
+
                     var latLon: LatLon by remember { mutableStateOf(LatLon(51.05, -0.72)) }
 
                     latLonViewModel.latLonLiveData.observe(this) { latLon = it } // "it" is the LatLon being observed and used to update user's location to the UI

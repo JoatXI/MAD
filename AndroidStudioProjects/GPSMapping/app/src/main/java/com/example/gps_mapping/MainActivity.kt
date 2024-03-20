@@ -20,8 +20,13 @@ import android.preference.PreferenceManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Switch
 import androidx.compose.material3.TextField
@@ -29,6 +34,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import org.osmdroid.config.Configuration
@@ -63,7 +71,7 @@ class MainActivity : ComponentActivity(), LocationListener {
                             })
                         }
                         composable("settingsScreen") {
-                            SettingsComposable({ lat, lon, openTopo -> })
+                            SettingsComposable(onSettingsUpdated = { lat, lon, openTopo -> })
                         }
                     }
                 }
@@ -117,24 +125,35 @@ class MainActivity : ComponentActivity(), LocationListener {
 
     @Composable
     fun HomeScreenComposable(settingsMenu: () -> Unit) {
+        Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
+            var latLon: LatLon by remember { mutableStateOf(LatLon(51.05, -0.72)) }
 
-        var latLon: LatLon by remember { mutableStateOf(LatLon(51.05, -0.72)) }
+            latLonViewModel.latLonLiveData.observe(this) { latLon = it } // "it" is the LatLon being observed and used to update user's location to the UI
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                val mapHeight = this.maxHeight - 50.dp
 
-        latLonViewModel.latLonLiveData.observe(this) { latLon = it } // "it" is the LatLon being observed and used to update user's location to the UI
-        Column {
-            Row(modifier = Modifier.zIndex(2.0f)) {
-                Text("Latitude: ${latLon.lat}, Longitude: ${latLon.lon}")
+                MapComposable(GeoPoint(latLon.lat, latLon.lon), modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .height(mapHeight))
+
+                Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier
+                    .zIndex(2.0f)
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .border(1.dp, Color.Black)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Text("Latitude: ${latLon.lat}, Longitude: ${latLon.lon}")
+                        Button( onClick ={ settingsMenu() }) { Text("SETTINGS") }
+                    }
+                }
             }
-            Button(modifier = Modifier.zIndex(2.0f), onClick ={ settingsMenu() }) { Text("SETTINGS") }
-
-            MapComposable(GeoPoint(latLon.lat, latLon.lon))
         }
     }
 }
 
 @Composable
-fun MapComposable(geoPoint: GeoPoint) {
-    AndroidView(factory = { ctx  -> Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx))
+fun MapComposable(geoPoint: GeoPoint, modifier: Modifier) {
+    AndroidView(modifier = Modifier, factory = { ctx  -> Configuration.getInstance().load(ctx, PreferenceManager.getDefaultSharedPreferences(ctx))
 
         val map1 = MapView(ctx).apply {
             setMultiTouchControls(true)
@@ -148,9 +167,7 @@ fun MapComposable(geoPoint: GeoPoint) {
         }
         map1.overlays.add(marker)
         map1
-    },
-    update = { view -> view.controller.setCenter(geoPoint)}
-    )
+    }, update = { view -> view.controller.setCenter(geoPoint) })
 }
 
 @Composable
@@ -159,12 +176,22 @@ fun SettingsComposable(onSettingsUpdated: (Double, Double, Boolean) -> Unit) {
         var lat by remember { mutableStateOf("") }
         var lon by remember { mutableStateOf("") }
 
-        TextField(value = lat, onValueChange = {lat=it} )
-        TextField(value = lon, onValueChange = {lon=it} )
+        Row {
+            TextField(value = lat, onValueChange = {lat=it}, modifier = Modifier
+                .weight(1.0f)
+                .zIndex(2.0f)
+                .padding(end = 2.dp))
+            TextField(value = lon, onValueChange = {lon=it}, modifier = Modifier
+                .weight(1.0f)
+                .zIndex(2.0f)
+                .padding(start = 2.dp))
+        }
 
         var openTopo by remember { mutableStateOf(false) }
-        Switch(checked = openTopo, onCheckedChange = { openTopo=it})
-        
-        Button(onClick = {onSettingsUpdated(lat.toDouble(), lon.toDouble(), openTopo)}) { Text("Update") }
+
+        Row(modifier = Modifier.align(Alignment.End)) {
+            Switch(modifier = Modifier.padding(end = 240.dp), checked = openTopo, onCheckedChange = { openTopo=it})
+            Button(modifier = Modifier.padding(end = 4.dp), onClick = {onSettingsUpdated(lat.toDouble(), lon.toDouble(), openTopo)}) { Text("Update") }
+        }
     }
 }

@@ -1,25 +1,15 @@
 package com.example.composemapview
 
-import android.content.Context
 import android.os.Bundle
 import android.preference.PreferenceManager
-import android.util.DisplayMetrics
-import android.view.ViewGroup
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
@@ -53,15 +42,14 @@ class MainActivity : ComponentActivity() {
                 Surface(color=MaterialTheme.colorScheme.background, modifier=Modifier.fillMaxSize()) {
                     var lat by remember { mutableStateOf("") }
                     var lng by remember { mutableStateOf("") }
-                    var geoPoint by remember { mutableStateOf(GeoPoint(0.0, 0.0)) }
+                    var geoPoint by remember { mutableStateOf(GeoPoint(50.9, -1.4)) }
 
                     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                         val mapHeight = this.maxHeight - 80.dp // Subtracting the height of the controls row
 
-                        MapComposable(geoPoint, modifier=Modifier.align(Alignment.TopCenter).height(mapHeight))
+                        MapComposable(geoPoint, modifier=Modifier.align(Alignment.TopCenter).height(mapHeight).border(1.dp, Color.Black))
 
-                        Surface(color=MaterialTheme.colorScheme.background,
-                            modifier=Modifier.fillMaxWidth()
+                        Surface(color=MaterialTheme.colorScheme.background, modifier=Modifier.fillMaxWidth()
                             .align(Alignment.BottomCenter).zIndex(2.0f).height(80.dp)) {
                             Row( verticalAlignment = Alignment.CenterVertically) {
 
@@ -83,7 +71,6 @@ class MainActivity : ComponentActivity() {
                                     Text("View")
                                 }
                             }
-
                         }
                     }
                 }
@@ -102,12 +89,9 @@ fun MapComposable( geoPoint: GeoPoint, modifier: Modifier) {
             setClickable(true)
             setMultiTouchControls(true)
             setTileSource(TileSourceFactory.MAPNIK)
-            controller.setZoom(10.0)
+            controller.setZoom(14.0)
         }
-    },
-        update = { view -> view.controller.setCenter(geoPoint) }
-    )
-
+    }, update = { view -> view.controller.setCenter(geoPoint) })
 }
 
 @Preview(showBackground = true)

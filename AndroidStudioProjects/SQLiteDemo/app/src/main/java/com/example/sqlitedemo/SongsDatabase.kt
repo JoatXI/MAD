@@ -18,7 +18,7 @@ public abstract class SongsDatabase: RoomDatabase() {
                 tempInstance = Room.databaseBuilder(
                     ctx.applicationContext,
                     SongsDatabase::class.java,
-                    "songsDatabase"
+                    "song_database"
                 ).build()
                 instance = tempInstance
             }

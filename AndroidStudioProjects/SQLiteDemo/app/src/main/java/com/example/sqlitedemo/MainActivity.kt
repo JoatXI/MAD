@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-
+                    InputComposable(db!!.songsDao())
                 }
             }
         }
@@ -72,9 +72,17 @@ fun InputComposable(songDao: BillboardDao) {
     }
 
     Row {
-        Button(onClick = { val s = Songs(songName, songTitle, songYear) }) { Text("ADD SONG")}
-        Button(onClick = { songDao.getSongById(id = Long) }) { Text("FIND SONG")}
-        Button(onClick = { songDao.update() }) { Text("UPDATE SONG")}
-        Button(onClick = { songDao.delete() }) { Text("DELETE SONG")}
+        Button(onClick = {
+            val newSong = Songs(name = songName, title =  songTitle, year =  songYear.toInt())
+            val id = songDao.insert(newSong)
+        }) { Text("ADD SONG")}
+        Button(onClick = { songDao.getSongById(id = id.toLong()) }) { Text("FIND SONG")}
+        Button(onClick = {
+            val updSong = Songs(id = id.toLong(), name = songName, title = songTitle, year = songYear.toInt())
+            songDao.update(updSong)
+        }) { Text("UPDATE SONG")}
+        Button(onClick = {
+            val delSong = Songs(id = id.toLong(), name = songName, title = songTitle, year = songYear.toInt())
+            songDao.delete(delSong) }) { Text("DELETE SONG")}
     }
 }

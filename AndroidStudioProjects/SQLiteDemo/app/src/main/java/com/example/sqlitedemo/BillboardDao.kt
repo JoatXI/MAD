@@ -5,7 +5,7 @@ import androidx.room.*;
 @Dao
 interface BillboardDao {
     @Query("SELECT * FROM billboard WHERE id = :id")
-    fun getSongById(id: Long.Companion): Songs?
+    fun getSongById(id: Long): Songs?
 
     @Query("SELECT * FROM billboard")
     fun getAllSongs(): List<Songs>

@@ -15,16 +15,21 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.lifecycleScope
 import com.example.sqlitedemo.ui.theme.SQLiteDemoTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
-    var db : SongsDatabase? = null
+    lateinit var db : SongsDatabase
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -38,54 +43,73 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    InputComposable(db!!.songsDao())
+                    InputComposable()
                 }
             }
         }
     }
-}
 
-@Composable
-fun InputComposable(songDao: BillboardDao) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        var id by remember { mutableStateOf("") }
-        var artistName by remember { mutableStateOf("") }
-        var songTitle by remember { mutableStateOf("") }
-        var songYear by remember { mutableStateOf("") }
+    @Composable
+    fun InputComposable() {
+        Column(modifier = Modifier.fillMaxSize()) {
+            var id by remember { mutableStateOf("") }
+            var artistName by remember { mutableStateOf("") }
+            var songTitle by remember { mutableStateOf("") }
+            var songYear by remember { mutableStateOf("") }
 
-        var result by remember { mutableStateOf("") }
-        var song: Songs by remember { mutableStateOf(Songs(name = "", title = "", year = 0)) }
+            var result by remember { mutableIntStateOf(0) }
+            var res by remember { mutableIntStateOf(0) }
+            var song: Songs by remember { mutableStateOf(Songs(name = "", title = "", year = 0)) }
 
-        Column {
-            TextField(value = id, onValueChange = {id=it})
-            TextField(value = artistName, onValueChange = {artistName=it})
-            TextField(value = songTitle, onValueChange = {songTitle=it})
-            TextField(value = songYear, onValueChange = {songYear=it})
-        }
+            Column {
+                TextField(value = id, onValueChange = {id=it})
+                TextField(value = artistName, onValueChange = {artistName=it})
+                TextField(value = songTitle, onValueChange = {songTitle=it})
+                TextField(value = songYear, onValueChange = {songYear=it})
+            }
 
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = {
-                val newSong = Songs(name = artistName, title =  songTitle, year =  songYear.toInt())
-                val id = songDao.insert(newSong)
-                result = id.toString()
-            }) { Text("ADD SONG")}
-            Text(result)
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = {
+                    lifecycleScope.launch {
+                        withContext(Dispatchers.IO) {
+                            val newSong = Songs(name = artistName, title =  songTitle, year =  songYear.toInt())
+                            id = db.songsDao().insert(newSong).toString()
+                        }
+                    }
+                }) { Text("ADD SONG")}
+                Text(id)
 
-            Button(onClick = { song = songDao.getSongById(id = id.toLong())!! }) { Text("FIND SONG")}
-            //Text(song.toString())
-        }
+                Button(onClick = {
+                    lifecycleScope.launch {
+                        withContext(Dispatchers.IO) {
+                            song = db.songsDao().getSongById(id.toLong())!!
+                        }
+                    }
+                }) { Text("FIND SONG")}
+                Text(song.toString())
+            }
 
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Button(onClick = {
-                val updSong = Songs(id = id.toLong(), name = artistName, title = songTitle, year = songYear.toInt())
-                songDao.update(updSong)
-            }) { Text("UPDATE SONG")}
-            //Text("Song updated successfully!")
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = {
+                    lifecycleScope.launch {
+                        withContext(Dispatchers.IO) {
+                            val updSong = Songs(id = id.toLong(), name = artistName, title = songTitle, year = songYear.toInt())
+                            result = db.songsDao().update(updSong)
+                        }
+                    }
+                }) { Text("UPDATE SONG")}
+                Text(result.toString())
 
-            Button(onClick = {
-                val delSong = Songs(id = id.toLong(), name = artistName, title = songTitle, year = songYear.toInt())
-                songDao.delete(delSong) }) { Text("DELETE SONG")}
-            //Text("Song successfully deleted")
+                Button(onClick = {
+                    lifecycleScope.launch {
+                        withContext(Dispatchers.IO) {
+                            val delSong = Songs(id = id.toLong(), name = artistName, title = songTitle, year = songYear.toInt())
+                            res = db.songsDao().delete(delSong)
+                        }
+                    }
+                }) { Text("DELETE SONG")}
+                Text(res.toString())
+            }
         }
     }
 }

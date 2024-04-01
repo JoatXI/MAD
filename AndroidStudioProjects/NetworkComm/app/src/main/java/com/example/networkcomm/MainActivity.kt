@@ -15,15 +15,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import com.example.networkcomm.ui.theme.NetworkCommTheme
-import com.github.kittinunf.fuel.core.Parameters
 import com.github.kittinunf.fuel.httpGet
-// import com.github.kittinunf.fuel.json.responseJson // for JSON - uncomment when needed
+import com.github.kittinunf.fuel.json.responseJson // for JSON - uncomment when needed
 import com.github.kittinunf.fuel.gson.responseObject // for GSON - uncomment when needed
 import com.github.kittinunf.fuel.httpPost
-import com.github.kittinunf.fuel.json.responseJson
 import com.github.kittinunf.result.Result
 
 class MainActivity : ComponentActivity() {
@@ -36,7 +33,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ArtistSearch()
+                    AddSong()
                 }
             }
         }
@@ -53,7 +50,7 @@ fun ArtistSearch() {
             TextField(value = songs, onValueChange = {songs=it})
 
             Button(onClick = {
-                val url = "http://10.0.2.2:2024/uknumberones/artist/$songs"
+                val url = "http://10.0.2.2:3000/artist/$songs"
                 url.httpGet().responseJson { request, response, result ->
                     when(result) {
                         is Result.Success -> {
@@ -84,6 +81,9 @@ fun AddSong() {
         var title by remember { mutableStateOf("") }
         var artist by remember { mutableStateOf("") }
         var year by remember { mutableStateOf("") }
+        var downloads by remember { mutableStateOf("") }
+        var price by remember { mutableStateOf("") }
+        var quantity by remember { mutableStateOf("") }
 
         var outputText by remember { mutableStateOf("") }
 
@@ -91,11 +91,14 @@ fun AddSong() {
             TextField(value = title, onValueChange = {title=it})
             TextField(value = artist, onValueChange = {artist=it})
             TextField(value = year, onValueChange = {year=it})
+            TextField(value = downloads, onValueChange = {downloads=it})
+            TextField(value = price, onValueChange = {price=it})
+            TextField(value = quantity, onValueChange = {quantity=it})
 
             Button(onClick = {
-                val url = "https://10.0.2.2:2024/uknumberones/add"
-                val addSong = listOf("title" to title, "artist" to artist, "year" to year)
-                url.httpPost(addSong).response { request, response, result ->
+                val url = "http://10.0.2.2:3000/song/create"
+                val postData = listOf("title" to title, "artist" to artist, "year" to year.toInt(), "downloads" to downloads.toInt(), "price" to price.toFloat(), "quantity" to quantity.toInt())
+                url.httpPost(postData).response { request, response, result ->
                     when(result) {
                         is Result.Success -> {
                             outputText = result.get().decodeToString()
